@@ -118,17 +118,20 @@ def save_reports(target, findings):
     with open("report.html", "w", encoding="utf-8") as f:
         f.write(html)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     try:
         if len(sys.argv) == 1:
-            print("=== Sentinel Web Security Auditor v2.1 ===")
-            t = input("Enter Authorized Target URL (e.g. https://example.com): ").strip()
-            if not t.startswith("http"): t = "https://" + t
-            if input("Confirm legal authorization (yes/no): ").strip().lower() != "yes":
-                sys.exit("Aborted: Authorization required.")
-            res = asyncio.run(scan(t))
-            save_reports(t, res)
-            print(f"\n[+] Done! Found {len(res)} issues. Opening report.html...")
-            webbrowser.open("file://" + os.path.abspath("report.html"))
+            print('=== Sentinel Web Security Auditor v2.1 ===')
+            t = input('Enter Authorized Target URL (e.g. https://example.com): ').strip()
+            if not t.startswith('http'): t = 'https://' + t
+            if input('Confirm legal authorization (yes/no): ').strip().lower() != 'yes': sys.exit('Aborted.')
+            res = asyncio.run(scan(t)); save_reports(t, res)
+            print(f'\n[+] Done! Found {len(res)} issues. Opening report.html...')
+            webbrowser.open('file://' + os.path.abspath('report.html'))
         else:
-            p = argparse.ArgumentParser()
+            p = argparse.ArgumentParser(); p.add_argument('--target', required=True); p.add_argument('--authorized', action='store_true', required=True); a = p.parse_args()
+            res = asyncio.run(scan(a.target)); save_reports(a.target, res); print(f'[+] Done! Found {len(res)} issues.')
+    except Exception as e:
+        print(f'\n[!] Error: {e}'); traceback.print_exc()
+    finally:
+        if len(sys.argv) == 1: input('\nPress Enter to exit...')
