@@ -1,6 +1,6 @@
 ﻿import asyncio, aiohttp, argparse, json, re, sys, webbrowser, os, traceback
 from datetime import datetime
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 CANARY = "s3nt1n3lXssProbe99"
 RULES = {
@@ -61,7 +61,9 @@ async def scan(target):
             if "x-frame-options" not in hdrs: add("XFO", "Missing X-Frame-Options Header", target)
             if "x-content-type-options" not in hdrs: add("XCTO", "Missing X-Content-Type-Options", target)
             acao = hdrs.get("access-control-allow-origin", "")
-            if acao == "*" or "evil-test.com" in acao: add("CORS", "Misconfigured CORS Policy", f"Access-Control-Allow-Origin: {acao}")
+            acao_host = urlparse(acao).hostname if acao else None
+            if acao == "*" or (acao_host and (acao_host == "evil-test.com" or acao_host.endswith(".evil-test.com"))):
+                add("CORS", "Misconfigured CORS Policy", f"Access-Control-Allow-Origin: {acao}")
             for c in r.headers.getall("Set-Cookie", []):
                 if "httponly" not in c.lower() or "secure" not in c.lower(): add("COOKIE", "Insecure Cookie Flags", c[:80])
             for tech in [hdrs.get("server", ""), hdrs.get("x-powered-by", "")]:
