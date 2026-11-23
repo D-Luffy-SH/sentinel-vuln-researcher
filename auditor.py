@@ -1,6 +1,6 @@
 ﻿import asyncio, aiohttp, argparse, json, re, sys, webbrowser, os, traceback
 from datetime import datetime
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 CANARY = "s3nt1n3lXssProbe99"
 RULES = {
@@ -95,7 +95,7 @@ async def scan(target):
             (f"{target}{sep}q=<{CANARY}>", lambda t, h: '<' + CANARY + '>' in t, "REFLECT", "Unescaped Input Reflection (Potential XSS)", f"Canary '{CANARY}' reflected"),
             (f"{target}{sep}tpl={{7*7}}", lambda t, h: "49" in t and "{7*7}" not in t, "SSTI", "Template Expression Evaluated (Potential SSTI)", "'{{7*7}}' evaluated to '49'"),
             (f"{target}{sep}id=1'", lambda t, h: bool(re.search(r"(SQL syntax|mysql_fetch|ORA-01756|PostgreSQL.*ERROR|SQLite3::)", t, re.I)), "SQLI_ERR", "Database Error Disclosed (Potential SQLi)", "SQL error triggered"),
-            (f"{target}{sep}next=https://example.org", lambda t, h: "example.org" in h.get("location", ""), "OPEN_REDIR", "Unvalidated Open Redirect", f"Redirected to {''}")
+            (f"{target}{sep}next=https://example.org", lambda t, h: (urlparse(h.get("location", "")).hostname or "").lower() == "example.org", "OPEN_REDIR", "Unvalidated Open Redirect", f"Redirected to {''}")
         ]
         for purl, fn, rkey, rtitle, rev in probes:
             try:
